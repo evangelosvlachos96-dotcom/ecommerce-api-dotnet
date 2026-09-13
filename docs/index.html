@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EcommerceApp — a .NET 6 shop API with Stripe, invoices and a real order lifecycle</title>
+<meta name="description" content="ASP.NET Core 6 Web API: JWT auth, product catalogue synced daily by Quartz, Stripe Checkout, server-side PDF invoices emailed on payment, and an Order entity that enforces Submitted → Paid → Dispatched.">
+<meta property="og:title" content="EcommerceApp — .NET 6 e-commerce API">
+<meta property="og:description" content="Stripe Checkout, PDF invoices by e-mail, scheduled catalogue sync, JWT auth, and an order state machine. EF Core + SQL Server.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --board:#e9edf1; --paper:#fff; --ink:#1b2733; --muted:#5d6c7b; --rule:#cfd6dd;
+    --accent:#6b4fbb;
+  }
+  * { box-sizing:border-box }
+  body { margin:0; font-family:"Public Sans","Segoe UI",system-ui,sans-serif; color:var(--ink); background:var(--board); line-height:1.5 }
+  a { color:var(--accent) }
+  .wrap { max-width:1040px; margin:0 auto; padding:0 1.5rem }
+  header { background:var(--paper); border-bottom:1px solid var(--rule); border-top:4px solid var(--accent) }
+  header .wrap { display:flex; justify-content:space-between; align-items:center; padding:1rem 1.5rem }
+  header b { font-size:1.05rem }
+  nav a { margin-left:1.25rem; color:var(--muted); text-decoration:none; font-size:.95rem }
+  nav a:hover { color:var(--ink) }
+  .hero { padding:3.5rem 0 2.5rem }
+  .hero h1 { font-size:clamp(2rem,4.5vw,3rem); line-height:1.1; margin:0 0 1rem; letter-spacing:-.01em; max-width:14ch }
+  .hero p { font-size:1.15rem; color:var(--muted); max-width:52ch; margin:0 0 1.75rem }
+  .cta { display:inline-flex; gap:.75rem; flex-wrap:wrap }
+  .btn { display:inline-block; padding:.7rem 1.25rem; border-radius:6px; text-decoration:none; font-weight:500; border:1px solid var(--rule); background:var(--paper); color:var(--ink) }
+  .btn--primary { background:var(--accent); color:#fff; border-color:var(--accent) }
+  .btn:hover { border-color:var(--accent) }
+  .shot { background:var(--paper); border:1px solid var(--rule); border-radius:10px; overflow:hidden; box-shadow:0 12px 40px rgba(27,39,51,.12) }
+  .shot img { display:block; width:100% }
+  section { padding:3rem 0 }
+  section h2 { font-size:1.6rem; margin:0 0 .5rem }
+  section > .wrap > p.lead { color:var(--muted); max-width:60ch; margin:0 0 2rem }
+  .steps { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:1.25rem }
+  .step { background:var(--paper); border:1px solid var(--rule); border-radius:8px; padding:1.25rem }
+  .step b { display:block; font-size:1.05rem; margin-bottom:.35rem }
+  .step p { margin:0; color:var(--muted) }
+  .step code { background:var(--board); padding:.1em .35em; border-radius:3px; font-size:.9em }
+  .feature { display:grid; grid-template-columns:1fr 1.4fr; gap:2rem; align-items:center; margin-bottom:3rem }
+  .feature:nth-child(even) { grid-template-columns:1.4fr 1fr }
+  .feature:nth-child(even) .text { order:2 }
+  .feature h3 { margin:0 0 .5rem; font-size:1.25rem }
+  .feature p { margin:0; color:var(--muted) }
+  .legend { list-style:none; padding:0; margin:1rem 0 0; display:grid; gap:.4rem }
+  .legend li { padding-left:1rem; border-left:5px solid var(--accent) }
+  .rules { background:var(--paper); border:1px solid var(--rule); border-radius:8px; padding:1.5rem 1.75rem }
+  .rules ol { margin:.5rem 0 0; padding-left:1.25rem }
+  .rules li { margin:.35rem 0 }
+  .rules .note { margin-top:1rem; padding-top:1rem; border-top:1px solid var(--rule); color:var(--muted) }
+  pre { background:var(--ink); color:#dfe7ee; padding:1rem 1.25rem; border-radius:8px; overflow:auto; font-size:.9rem; margin:0 }
+  footer { border-top:1px solid var(--rule); padding:2rem 0; color:var(--muted); font-size:.9rem }
+  @media (max-width:760px) { .feature, .feature:nth-child(even) { grid-template-columns:1fr } .feature:nth-child(even) .text { order:0 } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <b>EcommerceApp</b>
+    <nav>
+      <a href="#start">Start</a>
+      <a href="#how">How it works</a>
+      <a href="#api">API</a>
+      <a href="https://github.com/evangelosvlachos96-dotcom/ecommerce-api-dotnet">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="wrap">
+    <h1>An order goes Submitted, Paid, Dispatched. The code makes sure of it.</h1>
+    <p>A .NET 6 Web API for a small shop. Users sign in with a JWT, the product catalogue is pulled from an external source on a daily schedule, payment runs through Stripe Checkout, and a PDF invoice is generated and e-mailed the moment an order is paid. One process, EF Core, SQL Server.</p>
+    <div class="cta">
+      <a class="btn btn--primary" href="https://github.com/evangelosvlachos96-dotcom/ecommerce-api-dotnet">View on GitHub</a>
+      <a class="btn" href="https://github.com/evangelosvlachos96-dotcom/ecommerce-api-dotnet/tree/main/EcommerceApp">Browse the code</a>
+    </div>
+  </div>
+  <div class="wrap" style="margin-top:2.5rem">
+<pre>POST /api/orders                  create from product ids
+GET  /api/orders/checkout         → Stripe Checkout URL for the order
+GET  /api/orders/checkout-confirm → MarkPaid · render PDF · StoreInvoice · e-mail it
+PUT  /api/orders/dispatch         → MarkDispatched (only if Paid and invoiced)
+GET  /api/orders/invoice          the stored PDF, base64
+POST /api/orders/resend-email     send the invoice again</pre>
+  </div>
+</div>
+
+<section id="start">
+  <div class="wrap">
+    <h2>Start in four steps</h2>
+    <p class="lead">Needs the .NET 6 SDK, SQL Server (LocalDB is enough) and the EF Core CLI. Stripe test keys and an SMTP account only if you want payment and e-mail to work end to end.</p>
+    <div class="steps">
+      <div class="step"><b>1 · Configure</b><p>In <code>EcommerceApp/</code>: <code>cp appsettings.Example.json appsettings.json</code>. Real settings are git-ignored.</p></div>
+      <div class="step"><b>2 · Fill in the keys</b><p><code>ConnectionStrings:EcommerceDB</code>, <code>JwtSettings:Key</code> (32+ chars), <code>Stripe:SecretKey</code>, and the <code>SmtpSettings</code> block. Or use <code>dotnet user-secrets set</code>.</p></div>
+      <div class="step"><b>3 · Create the database</b><p><code>dotnet ef database update --context EcommerceContext</code> applies the code-first migration.</p></div>
+      <div class="step"><b>4 · Run</b><p><code>dotnet run</code>, then open <code>https://localhost:7063/swagger</code>. Log in via <code>POST /api/users/login</code> and paste the bearer token into Authorize.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="how">
+  <div class="wrap">
+    <h2>How it works</h2>
+    <p class="lead">A layered monolith: controller → service → repository → EF Core. The interesting parts sit inside the services and the Order entity.</p>
+    <div class="steps">
+      <div class="step"><b>Order is a state machine</b><p>Private setters, a factory constructor, and three guarded transitions: <code>MarkPaid</code> only from Submitted, <code>StoreInvoice</code> only once and only when Paid, <code>MarkDispatched</code> only when Paid and an invoice exists. Callers cannot set <code>Status</code> directly.</p></div>
+      <div class="step"><b>Stripe Checkout</b><p>The payment service builds a Checkout Session from the order's line items and returns the hosted URL. Stripe redirects back to <code>checkout-confirm</code>, which marks the order paid and kicks off the invoice.</p></div>
+      <div class="step"><b>PDF invoice by e-mail</b><p>PdfSharpCore renders the invoice server-side. MailKit sends it as an attachment over SMTP. The base64 PDF is stored on the order, so it can be downloaded or re-sent later.</p></div>
+      <div class="step"><b>Catalogue sync on a schedule</b><p>A Quartz job replaces the Products table from fakestoreapi.com inside a transaction every day at noon (<code>0 0 12 * * ?</code>). Admins can fire the same job on demand with <code>GET /api/products/sync</code>.</p></div>
+      <div class="step"><b>JWT with a custom model binder</b><p><code>[FromJwtUserId]</code> binds the <code>userid</code> claim straight into action parameters, so a client cannot spoof it in the body. A Swagger filter hides that parameter from the generated docs. Admin actions require an admin claim.</p></div>
+      <div class="step"><b>One response envelope</b><p>Services return a result object instead of throwing for expected failures. Controllers wrap it in <code>APIResult&lt;T&gt;</code> with <code>Status</code>, <code>Data</code> and <code>Error</code>, so happy and sad paths look the same on the wire.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="api">
+  <div class="wrap">
+    <h2>The API</h2>
+    <p class="lead">Everything under <code>api/[controller]</code>. Only register and login are anonymous.</p>
+<pre>Users      POST /api/users/register        POST /api/users/login → JWT
+Products   GET  /api/products              any signed-in user
+           PUT  /api/products              admin
+           DELETE /api/products/{id}       admin
+           GET  /api/products/sync         admin · triggers the Quartz job
+Orders     POST /api/orders                GET /api/orders   GET /api/orders/user-based
+           GET  /api/orders/checkout       GET /api/orders/checkout-confirm
+           PUT  /api/orders/dispatch       GET /api/orders/invoice   POST /api/orders/resend-email</pre>
+    <div class="rules" style="margin-top:1.25rem">
+      <b>Data model</b>
+      <ol>
+        <li><b>Users</b> — GUID key, first and last name, e-mail, password, role (Basic or Admin)</li>
+        <li><b>Products</b> — id from the external catalogue, title, price, category, image, and an owned <code>Rating</code> value object stored as two columns</li>
+        <li><b>Orders</b> — GUID key, owning user id, total, status, nullable base64 invoice, timestamps</li>
+        <li><b>OrderProducts</b> — the many-to-many join table EF generates for <code>Order.Products</code></li>
+      </ol>
+      <p class="note">The repository's <a href="https://github.com/evangelosvlachos96-dotcom/ecommerce-api-dotnet/blob/main/EcommerceApp/docs/ARCHITECTURE.md">architecture notes</a> explain why it is layered rather than Clean or hexagonal, and list what would need hardening before production: password hashing instead of reversible encryption, Stripe webhooks instead of trusting the redirect, tests, indexes, tighter CORS. The <a href="https://github.com/evangelosvlachos96-dotcom/ecommerce-api-dotnet/blob/main/EcommerceApp/docs/DATA-MODEL.md">data model notes</a> cover the schema decisions.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    .NET 6 · ASP.NET Core Web API · EF Core 6 · SQL Server · Stripe.net · Quartz.NET · PdfSharpCore · MailKit · Swashbuckle &nbsp;·&nbsp;
+    <a href="https://github.com/evangelosvlachos96-dotcom/ecommerce-api-dotnet">Source on GitHub</a>
+  </div>
+</footer>
+
+</body>
+</html>
